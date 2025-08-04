@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -11,17 +10,19 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Aftab-web-dev/learningproject/config"
 	"github.com/Aftab-web-dev/learningproject/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
-	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
 func main() {
 	//Load environment variables
 	err := godotenv.Load()
+	
+	// connect to MongoDB
+	config.ConnectMongoDB()
+	
 	 if err != nil {
         log.Fatal("Error loading .env file")
     }
@@ -30,30 +31,6 @@ func main() {
 	if port == "" { 
 		port = "8080"
 	}
-
-	// initialize mongoDB connection here
-	mongoURI := os.Getenv("MONGO_URI")
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	clientOptions := options.Client().ApplyURI(mongoURI).SetServerAPIOptions(serverAPI)
-	
-	// create a new MongoDB client
-	client , err := mongo.Connect(clientOptions)
-	if err != nil {
-		panic(err)
-	}
-	
-	defer func() { 
-		if err = client.Disconnect(context.TODO()); err != nil {
-			panic(err)
-		}
-	} ()
-
-	// Send a ping to confirm a successful connection
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		panic(err)
-	}
-	fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
-	
 	// Initialize Gin router
 	r := gin.Default()
 	routes.RegisterRoutes(r)
@@ -96,6 +73,5 @@ func main() {
 	} else {
 		slog.Info("Server gracefully stopped")
 	}
-
 
 }
