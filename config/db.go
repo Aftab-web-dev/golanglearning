@@ -1,44 +1,48 @@
 package config
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"os"
+    "context"
+    "fmt"
+    "log"
+    "os"
 
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
-	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
+    "go.mongodb.org/mongo-driver/v2/mongo"
+    "go.mongodb.org/mongo-driver/v2/mongo/options"
+    "go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
 var DB *mongo.Database
+var MongoClient *mongo.Client
 
 func ConnectMongoDB() {
-	mongoURI := os.Getenv("MONGO_URI")
+    mongoURI := os.Getenv("MONGO_URI")
+    if mongoURI == "" {
+        mongoURI = "mongodb+srv://username:password@cluster.mongodb.net"
+    }
 
-	if mongoURI == "" {
-		mongoURI = "mongodb+srv://username:password@cluster.mongodb.net"
-	}
+    clientOptions := options.Client().ApplyURI(mongoURI).SetServerAPIOptions(options.ServerAPI(options.ServerAPIVersion1))
+    client, err := mongo.Connect(clientOptions)
+    if err != nil {
+        log.Fatalf("Failed to connect to MongoDB: %v", err)
+    }
 
-	clientOptions := options.Client().ApplyURI(mongoURI).SetServerAPIOptions(options.ServerAPI(options.ServerAPIVersion1))
+    // Ping to confirm connection
+    if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+        log.Fatalf("Failed to ping MongoDB: %v", err)
+    }
 
-	client, err := mongo.Connect(clientOptions)
+    fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
 
-	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
-	}
+    // Store global client and DB
+    MongoClient = client
+    DB = client.Database("testdb") // Change to your database name
+}
 
-	defer func() {
-		if err = client.Disconnect(context.TODO()); err != nil {
-			log.Fatal(err, err.Error())
-		}
-	}()
-
-	// Send a ping to confirm a successful connection
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		panic(err)
-	}
-	fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
-
-	DB = client.Database("learningproject")
+// Call this in main.go during shutdown
+func DisconnectMongoDB() {
+    if MongoClient != nil {
+        if err := MongoClient.Disconnect(context.Background()); err != nil {
+            log.Println("Error disconnecting MongoDB:", err)
+        }
+    }
 }

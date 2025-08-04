@@ -1,77 +1,77 @@
 package main
 
 import (
-	"context"
-	"log"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+    "context"
+    "log"
+    "log/slog"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
 
-	"github.com/Aftab-web-dev/learningproject/config"
-	"github.com/Aftab-web-dev/learningproject/routes"
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+    "github.com/Aftab-web-dev/learningproject/config"
+    "github.com/Aftab-web-dev/learningproject/routes"
+    "github.com/gin-gonic/gin"
+    "github.com/joho/godotenv"
 )
 
 func main() {
-	//Load environment variables
-	err := godotenv.Load()
-	
-	// connect to MongoDB
-	config.ConnectMongoDB()
-	
-	 if err != nil {
-        log.Fatal("Error loading .env file")
+    // Load environment variables
+    if err := godotenv.Load(); err != nil {
+        log.Println("Warning: .env file not found")
     }
 
-	port := os.Getenv("PORT")
-	if port == "" { 
-		port = "8080"
-	}
-	// Initialize Gin router
-	r := gin.Default()
-	routes.RegisterRoutes(r)
-	
-	// Custom 404 handler
-	r.NoRoute(func(c *gin.Context) {
-		c.JSON(404, gin.H{
-			"error":   "Route not found",
-			"message": "The route you are trying to access does not exist",
-		})
-	})
+    // Connect to MongoDB
+    config.ConnectMongoDB()
+    defer config.DisconnectMongoDB() // ✅ Disconnect only on shutdown
 
-	r.Run(":" + port)
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
 
-	// Create HTTP server with Gin handler
-	server := &http.Server{
-		Addr:    port,
-		Handler: r,
-	}
+    // Initialize Gin router
+    r := gin.Default()
+    routes.UserRoutes(r)
 
-	//Graceful shutdown setip
-	done := make(chan os.Signal, 1)
-    signal.Notify(done, os.Interrupt, syscall.SIGTERM, syscall.SIGALRM)
-    
-	go func() {
-		if err := server.ListenAndServe(); err != nil {
-			log.Fatalf("Failed to start server: %v", err)
-		}
-	}()
-    
-	<-done
+    // Custom 404 handler
+    r.NoRoute(func(c *gin.Context) {
+        c.JSON(http.StatusNotFound, gin.H{
+            "error":   "Route not found",
+            "message": "The route you are trying to access does not exist",
+        })
+    })
 
-	slog.Info("Received shutdown signal, shutting down server...")
+    // Create HTTP server with Gin handler
+    server := &http.Server{
+        Addr:    ":" + port, // ✅ Fixed
+        Handler: r,
+    }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+    // Channel to listen for OS signals
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
-	if err := server.Shutdown(ctx); err != nil {
-		slog.Error("Error shutting down server", "error", err.Error())
-	} else {
-		slog.Info("Server gracefully stopped")
-	}
+    // Start server in a goroutine
+    go func() {
+        slog.Info("Server started on port " + port)
+        if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatalf("Failed to start server: %v", err)
+        }
+    }()
 
+    // Wait for termination signal
+    <-quit
+    slog.Info("Received shutdown signal, shutting down server...")
+
+    // Context for graceful shutdown
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    if err := server.Shutdown(ctx); err != nil {
+        slog.Error("Error shutting down server", "error", err.Error())
+    } else {
+        slog.Info("Server gracefully stopped")
+    }
 }
