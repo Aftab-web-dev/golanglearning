@@ -21,6 +21,11 @@ func main() {
         log.Fatal("Error loading .env file")
     }
 
+	port := os.Getenv("PORT")
+	if port == "" { 
+		port = "8080"
+	}
+
 	// initialize mongoDB connection here
 	mongoURI := os.Getenv("MONGO_URI")
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
@@ -56,5 +61,5 @@ func main() {
 		})
 	})
 
-	r.Run(":8080")
+	r.Run(":" + port)
 }
