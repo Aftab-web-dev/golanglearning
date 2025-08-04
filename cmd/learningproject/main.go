@@ -1,14 +1,53 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+
 	"github.com/Aftab-web-dev/learningproject/routes"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
 func main() {
+	//Load environment variables
+	err := godotenv.Load()
+	 if err != nil {
+        log.Fatal("Error loading .env file")
+    }
+
+	// initialize mongoDB connection here
+	mongoURI := os.Getenv("MONGO_URI")
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+	clientOptions := options.Client().ApplyURI(mongoURI).SetServerAPIOptions(serverAPI)
+	
+	// create a new MongoDB client
+	client , err := mongo.Connect(clientOptions)
+	if err != nil {
+		panic(err)
+	}
+	
+	defer func() { 
+		if err = client.Disconnect(context.TODO()); err != nil {
+			panic(err)
+		}
+	} ()
+
+	// Send a ping to confirm a successful connection
+	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+		panic(err)
+	}
+	fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
+	
+	// Initialize Gin router
 	r := gin.Default()
 	routes.RegisterRoutes(r)
-    
+	
 	// Custom 404 handler
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{
@@ -16,6 +55,6 @@ func main() {
 			"message": "The route you are trying to access does not exist",
 		})
 	})
-	
+
 	r.Run(":8080")
 }
