@@ -4,7 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/Aftab-web-dev/learningproject/routes"
 	"github.com/gin-gonic/gin"
@@ -62,4 +67,35 @@ func main() {
 	})
 
 	r.Run(":" + port)
+
+	// Create HTTP server with Gin handler
+	server := &http.Server{
+		Addr:    port,
+		Handler: r,
+	}
+
+	//Graceful shutdown setip
+	done := make(chan os.Signal, 1)
+    signal.Notify(done, os.Interrupt, syscall.SIGTERM, syscall.SIGALRM)
+    
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+    
+	<-done
+
+	slog.Info("Received shutdown signal, shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		slog.Error("Error shutting down server", "error", err.Error())
+	} else {
+		slog.Info("Server gracefully stopped")
+	}
+
+
 }
