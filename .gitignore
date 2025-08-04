@@ -1,0 +1,33 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build output, and temp files
+*.test
+*.out
+*.log
+
+# Go modules vendor folder
+/vendor/
+
+# IDE & editor folders
+.vscode/
+.idea/
+*.swp
+
+# Air / Fresh live reload temporary files
+tmp/
+build-errors.log
+.air.toml.local
+
+# OS specific
+Thumbs.db
+.DS_Store
+
+# Environment / secrets
+.env
+.env.local
+.env.*
