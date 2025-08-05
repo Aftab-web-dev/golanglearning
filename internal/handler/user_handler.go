@@ -8,7 +8,7 @@ import (
 	"github.com/Aftab-web-dev/learningproject/internal/controller"
 	"github.com/Aftab-web-dev/learningproject/internal/models"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 // POST /users
@@ -58,7 +58,7 @@ func GetUserbyidHandler(c *gin.Context) {
 		return
 	}
 
-	user, err := controller.GetUserbyidController(c.Request.Context() ,id)
+	user, err := controller.GetUserbyidController(c.Request.Context(), id)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})

@@ -7,36 +7,35 @@ import (
 	"github.com/Aftab-web-dev/learningproject/config"
 	"github.com/Aftab-web-dev/learningproject/internal/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-func CreateUserController(ctx  context.Context, user models.User) (primitive.ObjectID, error) {
+func CreateUserController(ctx  context.Context, user models.User) (bson.ObjectID, error) {
 	userCollection := config.DB.Collection("users")
-	user.ID = primitive.NewObjectID()
+	user.ID = bson.NewObjectID()
 
 	//  Check email uniqueness
 	var existingUser models.User
 	err := userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&existingUser)
 	if err == nil {
-		return primitive.NilObjectID, fmt.Errorf("email already exists")
+		return bson.NilObjectID, fmt.Errorf("email already exists")
 	} else if err != mongo.ErrNoDocuments {
-		return primitive.NilObjectID, err // some other DB error
+		return bson.NilObjectID, err // some other DB error
 	}
 
 	// Check username uniqueness
 	err = userCollection.FindOne(ctx, bson.M{"username": user.Username}).Decode(&existingUser)
 	if err == nil {
-		return primitive.NilObjectID, fmt.Errorf("username already taken")
+		return bson.NilObjectID, fmt.Errorf("username already taken")
 	} else if err != mongo.ErrNoDocuments {
-		return primitive.NilObjectID, err
+		return bson.NilObjectID, err
 	}
 
 	//  Insert new user
 	_, err = userCollection.InsertOne(ctx, user)
 	if err != nil {
 		fmt.Printf("InsertOne error: %v\n", err)
-		return primitive.NilObjectID, err
+		return bson.NilObjectID, err
 	}
 
 	return user.ID, nil
@@ -66,7 +65,7 @@ func GetUserbyidController(ctx  context.Context, id string ) (models.User, error
 	userCollection := config.DB.Collection("users")
 	var foundUser models.User
 
-	objID , err := primitive.ObjectIDFromHex(id)
+	objID , err := bson.ObjectIDFromHex(id)
 	if err != nil { 
 		return foundUser, fmt.Errorf("invalid user ID format")
 	}
