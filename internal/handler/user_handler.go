@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Aftab-web-dev/learningproject/internal/controller"
+	"github.com/Aftab-web-dev/learningproject/internal/middleware"
 	"github.com/Aftab-web-dev/learningproject/internal/models"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -86,8 +87,18 @@ func LoginHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+    
+	token , err := middleware.GenerateToken(loginreq.Username)
 
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error":"failed to generate token"})
+		return
+	}
+    
 	//login  sucessfully
-	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"token": token,
+	})
 
 }

@@ -2,7 +2,10 @@ module github.com/Aftab-web-dev/learningproject
 
 go 1.24.1
 
-require github.com/gin-gonic/gin v1.10.1
+require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/gin-gonic/gin v1.10.1
+)
 
 require gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 
@@ -34,7 +37,7 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.2.2
 	golang.org/x/arch v0.19.0 // indirect
-	golang.org/x/crypto v0.40.0 // indirect
+	golang.org/x/crypto v0.40.0
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
