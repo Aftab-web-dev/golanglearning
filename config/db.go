@@ -16,6 +16,7 @@ var MongoClient *mongo.Client
 
 func ConnectMongoDB() {
     mongoURI := os.Getenv("MONGO_URI")
+    DataBase := os.Getenv("DATA_BASE_NAME")
     if mongoURI == "" {
         mongoURI = "mongodb+srv://username:password@cluster.mongodb.net"
     }
@@ -35,7 +36,7 @@ func ConnectMongoDB() {
 
     // Store global client and DB
     MongoClient = client
-    DB = client.Database("testdb") // Change to your database name
+    DB = client.Database(DataBase) // Change to your database name
 }
 
 // Call this in main.go during shutdown
