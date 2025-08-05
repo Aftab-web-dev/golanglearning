@@ -8,15 +8,24 @@ import (
 	"github.com/Aftab-web-dev/learningproject/internal/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func CreateUserController(ctx  context.Context, user models.User) (bson.ObjectID, error) {
+	//Password Hashing
+	hashPassword , err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return bson.ObjectID{}, err
+	}
+	
 	userCollection := config.DB.Collection("users")
+	
 	user.ID = bson.NewObjectID()
+	user.Password = string(hashPassword)
 
 	//  Check email uniqueness
 	var existingUser models.User
-	err := userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&existingUser)
+	err = userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&existingUser)
 	if err == nil {
 		return bson.NilObjectID, fmt.Errorf("email already exists")
 	} else if err != mongo.ErrNoDocuments {
@@ -30,7 +39,7 @@ func CreateUserController(ctx  context.Context, user models.User) (bson.ObjectID
 	} else if err != mongo.ErrNoDocuments {
 		return bson.NilObjectID, err
 	}
-
+    
 	//  Insert new user
 	_, err = userCollection.InsertOne(ctx, user)
 	if err != nil {
