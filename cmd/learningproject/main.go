@@ -1,19 +1,20 @@
 package main
 
 import (
-    "context"
-    "log"
-    "log/slog"
-    "net/http"
-    "os"
-    "os/signal"
-    "syscall"
-    "time"
+	"context"
+	"log"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-    "github.com/Aftab-web-dev/learningproject/config"
-    "github.com/Aftab-web-dev/learningproject/routes"
-    "github.com/gin-gonic/gin"
-    "github.com/joho/godotenv"
+	"github.com/Aftab-web-dev/learningproject/config"
+	"github.com/Aftab-web-dev/learningproject/internal/middleware"
+	"github.com/Aftab-web-dev/learningproject/routes"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -33,8 +34,8 @@ func main() {
 
     // Initialize Gin router
     r := gin.Default()
+    r.Use(middleware.ContextTimeoutMiddleware(5 * time.Second))
     routes.UserRoutes(r)
-
     // Custom 404 handler
     r.NoRoute(func(c *gin.Context) {
         c.JSON(http.StatusNotFound, gin.H{
