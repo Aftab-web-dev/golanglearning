@@ -9,3 +9,8 @@ type User struct {
 	Phonenumber string        `json:"phone_number" bson:"phone_number" binding:"required"`
 	Password    string        `json:"password" bson:"password" binding:"required"`
 }
+
+type LoginUser struct {
+	Username string `json:"username" bson:"username" binding:"required"`
+	Password string `json:"password" bson:"password" binding:"required"`
+}

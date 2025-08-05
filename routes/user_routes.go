@@ -12,6 +12,9 @@ func UserRoutes(r *gin.Engine) {
 	userGroup.POST("/users", handler.CreateUserHandler )
 	userGroup.GET("/users/:id", handler.GetUserbyidHandler)
 	userGroup.GET("/allusers", handler.GetallUsersHandler)
+	
+	//login routes
+	userGroup.POST("/login", handler.LoginHandler)
 
 	// User routes
 

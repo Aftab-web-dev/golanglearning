@@ -11,21 +11,19 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func CreateUserController(ctx  context.Context, user models.User) (bson.ObjectID, error) {
+func CreateUserController(ctx context.Context, user models.User) (bson.ObjectID, error) {
 	//Password Hashing
-	hashPassword , err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return bson.ObjectID{}, err
 	}
-	
+
 	userCollection := config.DB.Collection("users")
-	
+
 	user.ID = bson.NewObjectID()
 	user.Password = string(hashPassword)
 
-	//  Check email uniqueness
-	var existingUser models.User
-	err = userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&existingUser)
+	err = userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&user)
 	if err == nil {
 		return bson.NilObjectID, fmt.Errorf("email already exists")
 	} else if err != mongo.ErrNoDocuments {
@@ -33,13 +31,13 @@ func CreateUserController(ctx  context.Context, user models.User) (bson.ObjectID
 	}
 
 	// Check username uniqueness
-	err = userCollection.FindOne(ctx, bson.M{"username": user.Username}).Decode(&existingUser)
+	err = userCollection.FindOne(ctx, bson.M{"username": user.Username}).Decode(&user)
 	if err == nil {
 		return bson.NilObjectID, fmt.Errorf("username already taken")
 	} else if err != mongo.ErrNoDocuments {
 		return bson.NilObjectID, err
 	}
-    
+
 	//  Insert new user
 	_, err = userCollection.InsertOne(ctx, user)
 	if err != nil {
@@ -50,12 +48,12 @@ func CreateUserController(ctx  context.Context, user models.User) (bson.ObjectID
 	return user.ID, nil
 }
 
-func GetallUsersController(ctx  context.Context) ([]models.User, error) {
+func GetallUsersController(ctx context.Context) ([]models.User, error) {
 	userCollection := config.DB.Collection("users")
 	cursor, err := userCollection.Find(ctx, bson.M{}) // Find all users
 
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
 	defer cursor.Close(ctx)
 
@@ -64,23 +62,43 @@ func GetallUsersController(ctx  context.Context) ([]models.User, error) {
 		return nil, err
 	}
 
-	 if users == nil {
-        users = []models.User{}
-    }
-   return users, nil
-} 
+	if users == nil {
+		users = []models.User{}
+	}
+	return users, nil
+}
 
-func GetUserbyidController(ctx  context.Context, id string ) (models.User, error) {
+func GetUserbyidController(ctx context.Context, id string) (models.User, error) {
 	userCollection := config.DB.Collection("users")
 	var foundUser models.User
 
-	objID , err := bson.ObjectIDFromHex(id)
-	if err != nil { 
+	objID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
 		return foundUser, fmt.Errorf("invalid user ID format")
 	}
 	err = userCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&foundUser)
-	if err != nil { 
+	if err != nil {
 		return foundUser, fmt.Errorf("user not found")
 	}
 	return foundUser, nil
+}
+
+func LoginuserController(ctx context.Context , user models.LoginUser) ( error) {
+	userCollection := config.DB.Collection("users")
+
+    var dbUser models.User
+
+	err := userCollection.FindOne(ctx , bson.M{"username": user.Username}).Decode(&dbUser)
+
+	if err != nil {
+     return  fmt.Errorf("username not found")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password))
+
+	if err != nil {
+		return  fmt.Errorf("invalid password")
+	}
+
+	return  nil
 }

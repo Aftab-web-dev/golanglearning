@@ -11,7 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-// POST /users
 func CreateUserHandler(c *gin.Context) {
 	var user models.User
 
@@ -69,5 +68,26 @@ func GetUserbyidHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+
+}
+
+func LoginHandler(c *gin.Context) {
+	var loginreq models.LoginUser
+
+	// Parse JSON from request
+	if err := c.ShouldBindJSON(&loginreq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	//call controller to verify login
+	err := controller.LoginuserController(c, loginreq)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	//login  sucessfully
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 
 }
