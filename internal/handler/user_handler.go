@@ -72,6 +72,24 @@ func GetUserbyidHandler(c *gin.Context) {
 
 }
 
+func DeleteUserbyidHandler(c *gin.Context) {
+	id := c.Param("id")
+    
+	err := controller.DeleteUserbyIdController(c.Request.Context(), id); 
+	 if err != nil {
+        if err.Error() == "user not found" || err.Error() == "invalid user ID format" {
+            c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        }
+        return
+    }
+
+	
+    c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+
+}
+
 func LoginHandler(c *gin.Context) {
 	var loginreq models.LoginUser
 
@@ -101,4 +119,26 @@ func LoginHandler(c *gin.Context) {
 		"token": token,
 	})
 
+}
+
+func UpdateUserHandler(c *gin.Context) {
+    id := c.Param("id")
+
+    var userupdate models.UserUpdate
+    if err := c.ShouldBindJSON(&userupdate); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+        return
+    }
+
+    err := controller.UpdatedetailsController(c.Request.Context(), id, userupdate)
+    if err != nil {
+        if err.Error() == "user not found" {
+            c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+        } else {
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        }
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
 }

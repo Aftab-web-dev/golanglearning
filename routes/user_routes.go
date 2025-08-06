@@ -12,7 +12,9 @@ func UserRoutes(r *gin.Engine) {
 	userGroup.POST("/users", handler.CreateUserHandler )
 	userGroup.GET("/users/:id", handler.GetUserbyidHandler)
 	userGroup.GET("/allusers", handler.GetallUsersHandler)
-	
+	userGroup.DELETE("/users/:id", handler.DeleteUserbyidHandler)
+	userGroup.PUT("/users/:id", handler.UpdateUserHandler)
+
 	//login routes
 	userGroup.POST("/login", handler.LoginHandler)
 

@@ -83,22 +83,81 @@ func GetUserbyidController(ctx context.Context, id string) (models.User, error) 
 	return foundUser, nil
 }
 
-func LoginuserController(ctx context.Context , user models.LoginUser) ( error) {
+func LoginuserController(ctx context.Context, user models.LoginUser) error {
 	userCollection := config.DB.Collection("users")
 
-    var dbUser models.User
+	var dbUser models.User
 
-	err := userCollection.FindOne(ctx , bson.M{"username": user.Username}).Decode(&dbUser)
+	err := userCollection.FindOne(ctx, bson.M{"username": user.Username}).Decode(&dbUser)
 
 	if err != nil {
-     return  fmt.Errorf("username not found")
+		return fmt.Errorf("username not found")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password))
 
 	if err != nil {
-		return  fmt.Errorf("invalid password")
+		return fmt.Errorf("invalid password")
 	}
 
-	return  nil
+	return nil
+}
+
+func DeleteUserbyIdController(ctx context.Context, id string) error {
+	userCollection := config.DB.Collection("users")
+
+	ObjID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return fmt.Errorf("invalid user ID format")
+	}
+
+	//Perform delete opertaion
+	result, err := userCollection.DeleteOne(ctx, bson.M{"_id": ObjID})
+	if err != nil {
+		return err
+	}
+
+	if result.DeletedCount == 0 {
+		return fmt.Errorf("user not found")
+	}
+	return nil
+}
+
+func UpdatedetailsController(ctx context.Context, id string, update models.UserUpdate) error {
+    userCollection := config.DB.Collection("users")
+
+    objID, err := bson.ObjectIDFromHex(id)
+    if err != nil {
+        return fmt.Errorf("invalid user ID format")
+    }
+
+    updateFields := bson.M{}
+
+    if update.Username != nil {
+        updateFields["username"] = *update.Username
+    }
+    if update.Email != nil {
+        updateFields["email"] = *update.Email
+    }
+    if update.Phonenumber != nil {
+        updateFields["phone_number"] = *update.Phonenumber
+    }
+    if update.Password != nil {
+        hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(*update.Password), bcrypt.DefaultCost)
+        updateFields["password"] = string(hashedPassword)
+    }
+
+    if len(updateFields) == 0 {
+        return fmt.Errorf("no fields to update")
+    }
+
+    result, err := userCollection.UpdateByID(ctx, objID, bson.M{"$set": updateFields})
+    if err != nil {
+        return err
+    }
+    if result.MatchedCount == 0 {
+        return fmt.Errorf("user not found")
+    }
+
+    return nil
 }

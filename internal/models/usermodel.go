@@ -10,6 +10,13 @@ type User struct {
 	Password    string        `json:"password" bson:"password" binding:"required"`
 }
 
+type UserUpdate struct {
+	Username    *string `json:"username,omitempty" bson:"username,omitempty"`
+	Email       *string `json:"email,omitempty" bson:"email,omitempty"`
+	Phonenumber *string `json:"phone_number,omitempty" bson:"phone_number,omitempty"`
+	Password    *string `json:"password,omitempty" bson:"password,omitempty"`
+}
+
 type LoginUser struct {
 	Username string `json:"username" bson:"username" binding:"required"`
 	Password string `json:"password" bson:"password" binding:"required"`
